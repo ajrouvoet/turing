@@ -3,6 +3,7 @@
 
 #define MAX_TRANSITIONS 5
 #define MAX_STATES 25
+#define MAX_STATE_NAME_LEN 15
 
 // forward declare structs
 struct State;
@@ -17,18 +18,18 @@ typedef enum {
 } Bool;
 
 struct Transition {
+	struct State *next;
+	Direction move;
 	char input;
 	char write;
-	Direction move;
-	struct State *next;
 };
 
 typedef struct Transition Transition;
 
 struct State {
-	int id;
-	int trans_count;
+	char name[ MAX_STATE_NAME_LEN ];
 	struct Transition* transitions[ MAX_TRANSITIONS ];
+	int trans_count;
 	Bool accept;
 	Bool reject;
 };
@@ -36,9 +37,9 @@ struct State {
 typedef struct State State;
 
 struct Turing {
-	int state_count;
 	State* states[ MAX_STATES ];
 	State* current;
+	int state_count;
 	int head;
 };
 

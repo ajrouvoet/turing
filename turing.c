@@ -8,9 +8,6 @@
 #define NDEBUG
 #include "errors.h"
 
-// used to hand out ids
-int state_id = 0;
-
 Transition* Transition_create( char input, char write, Direction move, State *next )
 {
 	// allocate memory
@@ -30,13 +27,17 @@ void Transition_destroy( Transition* trans )
 	free( trans );
 }
 
-State* State_create( Bool accept, Bool reject )
+State* State_create( char* name, Bool accept, Bool reject )
 {
 	// allocate mem
 	State *state = malloc( sizeof( State ));
 	if( ! state ) die( "Memory error" );
 
-	state->id = state_id++;
+	// copy the name and null terminate it
+	strncpy( state->name, name, MAX_STATE_NAME_LEN - 1 );
+	state->name[ MAX_STATE_NAME_LEN - 1 ] = '\0';
+
+	// set other properties
 	state->accept = accept;
 	state->reject = reject;
 	state->trans_count = 0;
@@ -49,7 +50,7 @@ void State_add_transition( State *state, Transition *trans )
 	// check if we can still add another transition
 	if( state->trans_count == MAX_TRANSITIONS ) {
 		char buffer[ 50 ];
-		sprintf( buffer, "State %d already has the maximum amount of transitions.", state->id );
+		sprintf( buffer, "State %s already has the maximum amount of transitions.", state->name );
 
 		die( buffer );
 	}
@@ -125,7 +126,7 @@ void Turing_print( Turing *machine, char *tape, int tape_len )
 	State *current = machine->current;
 	if( !current ) die( "Couldn't fetch current state" );
 
-	printf( " %d ", current->id );
+	printf( " %s ", current->name );
 
 	// print the rest of the tape
 	for( i = machine->head; i < tape_len; i++ ) {
@@ -184,7 +185,7 @@ State* Turing_step( Turing *machine, char* tape, int tape_len )
 	}
 
 	char buffer[ 50 ];
-	sprintf( buffer, "Turing machine blocked: state %d for input %c", state->id, input );
+	sprintf( buffer, "Turing machine blocked: state %s for input %c", state->name, input );
 
 	die( buffer );
 
@@ -200,10 +201,10 @@ void Turing_run( Turing *machine, char *tape, int tapelen )
 		State* state = Turing_step( machine, tape, tapelen );
 
 		if( state->accept ) {
-			printf( "\n> Done!\n\n> Input accepted in state: %d\n", state->id );
+			printf( "\n> Done!\n\n> Input accepted in state: %s\n", state->name );
 			break;
 		} else if( state->reject ) {
-			printf( "\n> Done!\n\n> Input rejected in state: %d\n", state->id );
+			printf( "\n> Done!\n\n> Input rejected in state: %s\n", state->name );
 			break;
 		} else {
 			Turing_print( machine, tape, tapelen );
@@ -215,13 +216,13 @@ int main( int argc, char* argv[] )
 {
 	Turing* machine = Turing_create();
 
-	State* q1 = State_create( FALSE, FALSE );
-	State* q2 = State_create( FALSE, FALSE );
-	State* q3 = State_create( FALSE, FALSE );
-	State* q4 = State_create( FALSE, FALSE );
-	State* q5 = State_create( FALSE, FALSE );
-	State* qaccept = State_create( TRUE, FALSE );
-	State* qreject = State_create( FALSE, TRUE );
+	State* q1 = State_create( "q1", FALSE, FALSE );
+	State* q2 = State_create( "q2", FALSE, FALSE );
+	State* q3 = State_create( "q3", FALSE, FALSE );
+	State* q4 = State_create( "q4", FALSE, FALSE );
+	State* q5 = State_create( "q5", FALSE, FALSE );
+	State* qaccept = State_create( "q_accept", TRUE, FALSE );
+	State* qreject = State_create( "q_reject", FALSE, TRUE );
 
 	Transition* q1_r_space = Transition_create( ' ', '\0', RIGHT, qreject );
 	Transition* q1_r_x = Transition_create( 'x', '\0', RIGHT, qreject );
