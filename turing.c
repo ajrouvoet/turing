@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include "turing.h"
+#include "turingparser.h"
 
 // disable debug mode
 #define NDEBUG
@@ -27,7 +28,7 @@ void Transition_destroy( Transition* trans )
 	free( trans );
 }
 
-State* State_create( char* name, Bool accept, Bool reject )
+State* State_create( const char* name, Bool accept, Bool reject )
 {
 	// allocate mem
 	State *state = malloc( sizeof( State ));
@@ -155,7 +156,7 @@ State* Turing_step( Turing *machine, char* tape, int tape_len )
 			if( !next ) die( "Transitions to NULL state" );
 
 			// write if nescesary
-			if( trans->write != '\0' ) {
+			if( trans->write != '\\' ) {
 				debug( "Writing %c", trans->write );
 				tape[ machine->head ] = trans->write;
 				debug( "Writing done" );
@@ -214,57 +215,9 @@ void Turing_run( Turing *machine, char *tape, int tapelen )
 
 int main( int argc, char* argv[] )
 {
-	Turing* machine = Turing_create();
+	FILE *fh = fopen( "simple.t", "r" );
 
-	State* q1 = State_create( "q1", FALSE, FALSE );
-	State* q2 = State_create( "q2", FALSE, FALSE );
-	State* q3 = State_create( "q3", FALSE, FALSE );
-	State* q4 = State_create( "q4", FALSE, FALSE );
-	State* q5 = State_create( "q5", FALSE, FALSE );
-	State* qaccept = State_create( "q_accept", TRUE, FALSE );
-	State* qreject = State_create( "q_reject", FALSE, TRUE );
-
-	Transition* q1_r_space = Transition_create( ' ', '\0', RIGHT, qreject );
-	Transition* q1_r_x = Transition_create( 'x', '\0', RIGHT, qreject );
-	Transition* q1_q2_zero = Transition_create( '0', ' ', RIGHT, q2 );
-	Transition* q2_q2_x = Transition_create( 'x', '\0', RIGHT, q2 );
-	Transition* q2_a_space = Transition_create( ' ', '\0', RIGHT, qaccept );
-	Transition* q2_q3_zero = Transition_create( '0', 'x', RIGHT, q3 );
-	Transition* q3_q3_x = Transition_create( 'x', '\0', RIGHT, q3 );
-	Transition* q3_q4_zero = Transition_create( '0', '\0', RIGHT, q4 );
-	Transition* q3_q5_space = Transition_create( ' ', '\0', LEFT, q5 );
-	Transition* q4_q3_zero = Transition_create( '0', 'x', RIGHT, q3 );
-	Transition* q4_q4_x = Transition_create( 'x', '\0', RIGHT, q4 );
-	Transition* q4_r_space = Transition_create( ' ', '\0', RIGHT, qreject );
-	Transition* q5_q5_zero = Transition_create( '0', '\0', LEFT, q5 ); 
-	Transition* q5_q5_x = Transition_create( 'x', '\0', LEFT, q5 ); 
-	Transition* q5_q2_space = Transition_create( ' ', '\0', RIGHT, q2 ); 
-
-	State_add_transition( q1, q1_r_space );
-	State_add_transition( q1, q1_r_x );
-	State_add_transition( q1, q1_q2_zero );
-	State_add_transition( q2, q2_q2_x );
-	State_add_transition( q2, q2_a_space );
-	State_add_transition( q2, q2_q3_zero );
-	State_add_transition( q3, q3_q3_x );
-	State_add_transition( q3, q3_q4_zero );
-	State_add_transition( q3, q3_q5_space );
-	State_add_transition( q4, q4_q3_zero );
-	State_add_transition( q4, q4_q4_x );
-	State_add_transition( q4, q4_r_space );
-	State_add_transition( q5, q5_q5_zero );
-	State_add_transition( q5, q5_q5_x );
-	State_add_transition( q5, q5_q2_space );
-
-	Turing_add_state( machine, q1 );
-	Turing_add_state( machine, q2 );
-	Turing_add_state( machine, q3 );
-	Turing_add_state( machine, q4 );
-	Turing_add_state( machine, q5 );
-	Turing_add_state( machine, qaccept );
-	Turing_add_state( machine, qreject );
-
-	machine->current = q1;
+	Turing *machine = Turing_parse( fh );
 
 	char* input = "0000000000000000  ";
 	int len = strlen( input );
