@@ -94,7 +94,10 @@ Transition* Transition_parse( FILE *fh, State** states, int states_len )
 	Transition *trans = Transition_create( st1, st2, dir, input, write );
 
 	// add it to the state
-	State_add_transition( st1, trans );
+	if( !State_add_transition( st1, trans )) {
+		log_err( "Failed to add state transition." );
+		goto out;
+	}
 	
 	return trans;
 
@@ -199,7 +202,10 @@ Turing* Turing_parse( FILE *fh )
 		if( !state ) goto out;
 
 		// add the state to the machine
-		Turing_add_state( machine, state );
+		if( !Turing_add_state( machine, state )) {
+			log_err( "Failed to add state." );
+			goto out;
+		}
 	}
 
 	// parse the transitions
@@ -212,7 +218,7 @@ Turing* Turing_parse( FILE *fh )
 	}
 
 	// set the first state
-	machine->current = machine->states[0];
+	machine->current = machine->states[2];
 	if( !machine->current ) {
 		log_err( "Turing machine should have atleast one state" );
 		goto out;

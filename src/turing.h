@@ -36,6 +36,8 @@ struct State {
 struct Turing {
 	State* states[ MAX_STATES ];
 	State* current;
+	State* reject;
+	State* accept;
 	int state_count;
 	int head;
 };
@@ -47,13 +49,13 @@ void Transition_destroy( Transition* );
 void Transition_print ( Transition* );
 
 State* State_create( const char*, bool, bool );
-void State_add_transition( State*, Transition* );
+bool State_add_transition( State*, Transition* );
 void State_print( State* );
 void State_destroy( State* );
 
 Turing* Turing_create();
 void Turing_destroy( Turing* );
-void Turing_add_state( Turing*, State* );
+bool Turing_add_state( Turing*, State* );
 void Turing_print( Turing*, char*, int );
 State* Turing_step( Turing*, char* , int );
 void Turing_run( Turing*, char*, int );

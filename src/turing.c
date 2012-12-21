@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <stdbool.h>
 #include "turing.h"
 #include "turingparser.h"
 
@@ -9,6 +10,10 @@
 #define NDEBUG
 #include "errors.h"
 
+/* Transition constructor
+ *
+ * @return {Transition*} valid Transition pointer or NULL on error
+ */
 Transition* Transition_create( State *start, State *next, Direction move, char input, char write )
 {
 	// make sure the input is valid
@@ -17,7 +22,10 @@ Transition* Transition_create( State *start, State *next, Direction move, char i
 
 	// allocate memory
 	Transition *trans = malloc( sizeof( Transition ));
-	if( ! trans ) die( "Memory error" );
+	if( ! trans ) {
+		log_err( "Memory error" );
+		return NULL;
+	}
 
 	trans->start = start;
 	trans->next = next;
@@ -30,14 +38,19 @@ Transition* Transition_create( State *start, State *next, Direction move, char i
 	return trans;
 }
 
+/* Transition destructor
+ */
 void Transition_destroy( Transition* trans )
 {
 	free( trans );
 }
 
+/* Transition print
+ * Or prints 'Transition{ NULL }' on NULL pointer
+ */
 void Transition_print( Transition *trans )
 {
-	if( ! trans ) printf( "NULL" );
+	if( ! trans ) printf( "Transition{ NULL }" );
 	else {
 		printf( "Transition{\n\tstate: %s\n\tinput: %c\n\tnext: %s\n\twrite: %c\n\tmove: %d\n}\n",
 			trans->start->name,
@@ -49,13 +62,23 @@ void Transition_print( Transition *trans )
 	}
 }
 
+/* State constructor
+ * 
+ * @param name {const char*} Name of the state
+ * @param accept {bool} Whether this is an accept state
+ * @param reject {bool} Whether this is a reject state
+ * @return {State*} or NULL on fail
+ */
 State* State_create( const char* name, bool accept, bool reject )
 {
 	assert( name );
 
 	// allocate mem
 	State *state = malloc( sizeof( State ));
-	if( ! state ) die( "Memory error" );
+	if( ! state ) {
+		log_err( "Memory error" );
+		return NULL;
+	}
 
 	// copy the name and null terminate it
 	strncpy( state->name, name, MAX_STATE_NAME_LEN - 1 );
@@ -71,27 +94,36 @@ State* State_create( const char* name, bool accept, bool reject )
 	return state;
 }
 
-void State_add_transition( State *state, Transition *trans )
+/* Adds a transition to a state
+ *
+ * @param state {State*}
+ * @param trans {Transition*}
+ * @return {bool} False on failure, true otherwise
+ */
+bool State_add_transition( State *state, Transition *trans )
 {
 	assert( state );
 	assert( trans );
 
 	// check if we can still add another transition
 	if( state->trans_count == MAX_TRANSITIONS ) {
-		char buffer[ 50 ];
-		sprintf( buffer, "State %s already has the maximum amount of transitions.", state->name );
-
-		die( buffer );
+		log_err( "State %s already has the maximum amount of transitions.", state->name );
+		return false;
 	}
 
 	// add the transition
 	state->transitions[ state->trans_count ] = trans;
 	state->trans_count = state->trans_count + 1;
+
+	return true;
 }
 
+/* State printer
+ * Prints 'State{ NULL }' if <state> is a NULL pointer
+ */
 void State_print( State *state )
 {
-	if( ! state ) printf( "NULL" );
+	if( ! state ) printf( "State{ NULL }" );
 	else {
 		printf( "State{\n\tname: %s\n\taccept: %d\n\treject: %d\n}\n",
 			state->name,
@@ -101,6 +133,11 @@ void State_print( State *state )
 	}
 }
 
+/* State destructor
+ * Also destroys all connected transitions
+ *
+ * Logs errors to stderr, but won't exit
+ */
 void State_destroy( State *state )
 {
 	assert( state );
@@ -110,7 +147,10 @@ void State_destroy( State *state )
 	// loop over its transitions
 	for( i = 0; i < state->trans_count; i++ ) {
 		Transition *trans = state->transitions[ i ];
-		if( !trans ) die( "Could not fetch transition." );
+		if( !trans ) {
+			log_err( "Problem destroying state transition." );
+			continue;
+		}
 
 		Transition_destroy( trans );
 	}
@@ -118,20 +158,42 @@ void State_destroy( State *state )
 	free( state );
 }
 
+/* Turing machine constructor
+ *
+ * @return {Turing*} or NULL on failure
+ */
 Turing* Turing_create()
 {
 	// allocate mem
 	Turing *machine = malloc( sizeof( Turing ));
+	if( !machine ) {
+		log_err( "Memory error." );
+		return NULL;
+	}
 
+	// init
 	machine->state_count = 0;
 	machine->current = NULL;
 	machine->head = 0;
+
+	// create an accept and reject state
+	machine->accept = State_create( "accept", true, false );
+	machine->reject = State_create( "reject", false, true );
+	Turing_add_state( machine, machine->accept );
+	Turing_add_state( machine, machine->reject );
 
 	assert( machine );
 
 	return machine;
 }
 
+/* Turing destructor
+ * Chain destroys all connected state.
+ *
+ * Will log on error, but won't exit
+ *
+ * @param machine {Turing*}
+ */
 void Turing_destroy( Turing *machine )
 {
 	assert( machine );
@@ -141,7 +203,10 @@ void Turing_destroy( Turing *machine )
 	// loop over it's states
 	for( i = 0; i < machine->state_count; i++ ) {
 		State *state = machine->states[ i ];
-		if( !state ) die( "Could not fetch turing state" );
+		if( !state ) {
+			log_err( "Error while destroying machine state." );
+			continue;
+		}
 
 		State_destroy( state );
 	}
@@ -149,19 +214,34 @@ void Turing_destroy( Turing *machine )
 	free( machine );
 }
 
-void Turing_add_state( Turing *machine, State *state )
+/* Adds a state to a turing machine
+ * 
+ * @param machine {Turing*}
+ * @param state {State*}
+ * @return {bool} Returns false on error
+ */
+bool Turing_add_state( Turing *machine, State *state )
 {
 	assert( machine );
 	assert( state );
 
 	if( machine->state_count == MAX_STATES ) {
-		die( "The turing machine already has the maximum amount of states" );
+		log_err( "The turing machine already has the maximum amount of states" );
+		return false;
 	}
 
 	// add the state
 	machine->states[ machine->state_count++ ] = state;
+
+	return true;
 }
 
+/* Turing printer
+ *
+ * @param machine
+ * @param tape {char*} input tape or NULL
+ * @param tape_len {int} length of input tape
+ */
 void Turing_print( Turing *machine, char *tape, int tape_len )
 {
 	assert( machine );
@@ -176,7 +256,10 @@ void Turing_print( Turing *machine, char *tape, int tape_len )
 
 	// print the current state at the position of the head
 	State *current = machine->current;
-	if( !current ) die( "Couldn't fetch current state" );
+	if( !current ) {
+		log_err( "Failed to retrieve machines current state." );
+		return;
+	}
 
 	printf( " %s ", current->name );
 
@@ -200,12 +283,18 @@ State* Turing_step( Turing *machine, char* tape, int tape_len )
 	// look for a transition on the given input
 	for( i = 0; i < state->trans_count; i++ ) {
 		Transition* trans = state->transitions[ i ];
-		if( !trans ) die( "Transition retrieval error" );
+		if( !trans ) {
+			log_err( "error while trying to get state transition." );
+			continue;
+		}
 
 		// check if this is a transition in the given char input
 		if( trans->input == input ) {
 			State *next = trans->next;
-			if( !next ) die( "Transitions to NULL state" );
+			if( !next ) {
+				log_err( "Transitions to NULL state" );
+				goto error;
+			}
 
 			// write if nescesary
 			if( trans->write != '\\' ) {
@@ -219,7 +308,8 @@ State* Turing_step( Turing *machine, char* tape, int tape_len )
 				}
 			} else {
 				if( machine->head + 1 >= tape_len ) {
-					die( "Machine walked of tape on right side" );
+					log_err( "Machine walked of tape on right side" );
+					goto error;
 				}
 				
 				machine->head++;
@@ -236,13 +326,10 @@ State* Turing_step( Turing *machine, char* tape, int tape_len )
 
 	// if the above loop did not return a next state
 	// no next state is available for the given input
-	char buffer[ 50 ];
-	sprintf( buffer, "Turing machine blocked: state %s for input %c", state->name, input );
+	// we reject per default
+	return machine->reject;
 
-	die( buffer );
-
-	// this point should never be reached
-	assert( false );
+error:
 	return NULL;
 }
 
@@ -252,12 +339,19 @@ void Turing_run( Turing *machine, char *tape, int tapelen )
 	assert( tape );
 
 	// check if the start state is configured properly
-	if( !machine->current ) die( "Turing machine has now start state" );
+	if( !machine->current ) {
+		log_err( "Turing machine has now start state" );
+		goto error;
+	}
 
 	// loop until we reach a decision state
 	while( true ) {
 		// step to the next state
 		State* state = Turing_step( machine, tape, tapelen );
+
+		// Turing_step returns NULL on error
+		// and does it's own error reporting
+		if( !state ) goto error;
 
 		// check if we reache a decision state
 		if( state->accept ) {
@@ -271,6 +365,9 @@ void Turing_run( Turing *machine, char *tape, int tapelen )
 			Turing_print( machine, tape, tapelen );
 		}
 	}
+
+error:
+	return;
 }
 
 int main( int argc, char* argv[] )
@@ -296,7 +393,8 @@ int main( int argc, char* argv[] )
 	}
 
 	printf( "> Parsing file %s ... \n\n", fname );
-	
+
+	// parse the file
 	Turing *machine = Turing_parse( fh );
 	if( !machine ) {
 		die( "Failed parsing the machine, exiting" );
@@ -305,10 +403,10 @@ int main( int argc, char* argv[] )
 	printf( "> Starting simulation... \n\n" );
 	
 	// print the starting machine state
-	Turing_print( machine, tape, 50 );
+	Turing_print( machine, tape, tapelength );
 
 	// start the simulation
-	Turing_run( machine, tape, 50 );
+	Turing_run( machine, tape, tapelength );
 
 	// clean up
 	fclose( fh );
