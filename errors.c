@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "errors.h"
 
 void die( char *message )
 {
 	if( message )
 	{
-		printf( "Error: %s.\n", message );
+		log_err( "Error: %s.\n", message );
 	}
 
 	// exit unsuccesfully
