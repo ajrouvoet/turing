@@ -9,7 +9,7 @@
 #define MAX_LINE_LEN 80
 
 /* Parses a transition from a file in the following syntax:
- * 	
+ *
  * 	s1 input -> s2 write move
  * 		`s1`	string name of start state
  * 		`input`	input on which this transition occurs
@@ -44,7 +44,7 @@ Transition* Transition_parse( FILE *fh, State** states, int states_len )
 
 	// create a parsing format and
 	// parse the line
-	sprintf( format, "%%%ds %%c -> %%%ds %%c %%c", 
+	sprintf( format, "%%%ds %%c -> %%%ds %%c %%c",
 		( MAX_STATE_NAME_LEN - 1 ),
 		( MAX_STATE_NAME_LEN - 1 )
 	);
@@ -98,7 +98,7 @@ Transition* Transition_parse( FILE *fh, State** states, int states_len )
 		log_err( "Failed to add state transition." );
 		goto out;
 	}
-	
+
 	return trans;
 
 // on parse errors
@@ -107,7 +107,7 @@ out:
 }
 
 /* Parses a state from a file using the following syntax
- * 	
+ *
  * 	s1 mode
  *		`s1` 	unique name of the new state
  *		`mode`	char indicating whether it's a decision state ('A' or 'R')
@@ -129,7 +129,7 @@ State* State_parse( FILE *fh )
 	fgets( buffer, MAX_LINE_LEN, fh );
 	// create the parsing format
 	// and parse the line
-	sprintf( format, "%%%ds %%c", ( MAX_STATE_NAME_LEN - 1 )), 
+	sprintf( format, "%%%ds %%c", ( MAX_STATE_NAME_LEN - 1 )),
 	parsed = sscanf( buffer, format, name, &mode );
 
 	// verify that we captured at least a name
@@ -171,7 +171,7 @@ out:
 
 /* Parses a turing machine from a file, first line should contain
  * the amount of states it should read from the file as a single number
- * 	
+ *
  * If parsing fails, it will print an error and return NULL
  *
  * @param fh {FILE*} pointer to file stream to read from
@@ -184,9 +184,20 @@ Turing* Turing_parse( FILE *fh )
 
 	// create a new turing machine
 	Turing *machine = Turing_create();
-	
+
 	// buffer the first line
-	fgets( buffer, MAX_LINE_LEN, fh );
+	// skip the comment section
+	while( true ) {
+		fgets( buffer, MAX_LINE_LEN, fh );
+
+		if( feof( fh )) {
+			log_err( "Invalid input file" );
+			goto out;
+		} else if ( buffer[0] != '#' ) {
+			// goto actual parsing
+			break;
+		}
+	}
 
 	// try to read the amount of states from the input
 	parsed = sscanf( buffer, "%d", &num_states );
