@@ -3,12 +3,15 @@
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include "turing.h"
 #include "turingparser.h"
 
 // disable debug mode
 #define NDEBUG
 #include "errors.h"
+
+static int verbose = 1;
 
 /* Transition constructor
  *
@@ -63,7 +66,7 @@ void Transition_print( Transition *trans )
 }
 
 /* State constructor
- * 
+ *
  * @param name {const char*} Name of the state
  * @param accept {bool} Whether this is an accept state
  * @param reject {bool} Whether this is a reject state
@@ -215,7 +218,7 @@ void Turing_destroy( Turing *machine )
 }
 
 /* Adds a state to a turing machine
- * 
+ *
  * @param machine {Turing*}
  * @param state {State*}
  * @return {bool} Returns false on error
@@ -311,7 +314,7 @@ State* Turing_step( Turing *machine, char* tape, int tape_len )
 					log_err( "Machine walked of tape on right side" );
 					goto error;
 				}
-				
+
 				machine->head++;
 			}
 
@@ -362,7 +365,9 @@ void Turing_run( Turing *machine, char *tape, int tapelen )
 			break;
 		// print the current state of the machine if not
 		} else {
-			Turing_print( machine, tape, tapelen );
+			if( verbose > 0 ) {
+				Turing_print( machine, tape, tapelen );
+			}
 		}
 	}
 
@@ -372,17 +377,31 @@ error:
 
 int main( int argc, char* argv[] )
 {
+	int c;
+	extern int optind, optopt;
+
+	while(( c = getopt( argc, argv, ":s" )) != -1 ) {
+		switch( c ) {
+			case 's':
+				verbose = 0;
+				break;
+			case '?':
+				printf( "unknown option: -%c\n", optopt );
+				break;
+		}
+	}
+
 	if( argc < 4 ) {
 		die( "USAGE: $ turing <FILE> <tape length> <tape init>" );
 	}
 
 	// parse params
-	char* fname = argv[1];
-	int tapelength = atoi( argv[2] );
+	char* fname = argv[optind++];
+	int tapelength = atoi( argv[optind++] );
 
 	// save copy of tape initial value
 	char tape[ tapelength + 1 ];
-	strncpy( tape, argv[3], tapelength );
+	strncpy( tape, argv[optind++], tapelength );
 	tape[ tapelength ] = '\0';
 
 	// open file
@@ -401,9 +420,11 @@ int main( int argc, char* argv[] )
 	}
 
 	printf( "> Starting simulation... \n\n" );
-	
+
 	// print the starting machine state
-	Turing_print( machine, tape, tapelength );
+	if( verbose > 0 ) {
+		Turing_print( machine, tape, tapelength );
+	}
 
 	// start the simulation
 	Turing_run( machine, tape, tapelength );
