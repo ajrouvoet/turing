@@ -7,4 +7,10 @@ SUITES = {
 	]
 }
 
+METRICS = {
+	'pass/fail' : {
+		'collector': './bin/passfail_collect.sh'
+	}
+}
+
 TEST_RUNNER = os.path.join( './', TESTS_DIR, 'run.sh' )

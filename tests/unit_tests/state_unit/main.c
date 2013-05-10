@@ -6,6 +6,7 @@
 int main( int argc, char** argv )
 {
 	printf( "hmm hmm" );
+	printf( "PASS" );
 
 	// fail
 	return 1;
