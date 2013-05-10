@@ -1,4 +1,4 @@
-CFLAGS=-Wall -g
+CFLAGS=-Wall -g -fprofile-arcs -ftest-coverage
 
 all: turing
 

@@ -1,2 +1,6 @@
 *.o
 src/turing
+__pycache__
+*.gcov
+*.gcda
+*.gcno
