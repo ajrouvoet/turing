@@ -4,3 +4,4 @@ __pycache__
 *.gcov
 *.gcda
 *.gcno
+.tmp/
