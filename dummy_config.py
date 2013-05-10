@@ -10,6 +10,11 @@ SUITES = {
 METRICS = {
 	'pass/fail' : {
 		'collector': './bin/passfail_collect.sh'
+	},
+
+	'coverage' : {
+		'collector': './bin/coverage_collect.sh',
+		'type': 'json'
 	}
 }
 
