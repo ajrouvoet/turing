@@ -1,5 +1,11 @@
 import os
+import sys
+
 from dummy.config.defaults import *
+from dummy.collector import Collector
+from dummy.collector.generic import PassFailCollector, CCoverageCollector
+
+sys.path.append( "bin" )
 
 SUITES = {
 	'all': [
@@ -9,12 +15,11 @@ SUITES = {
 
 METRICS = {
 	'pass/fail' : {
-		'collector': './bin/passfail_collect.sh'
+		'collector': PassFailCollector()
 	},
 
 	'coverage' : {
-		'collector': './bin/coverage_collect.sh',
-		'type': 'json'
+		'collector': CCoverageCollector()
 	}
 }
 
