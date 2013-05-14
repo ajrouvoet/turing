@@ -1,4 +1,4 @@
-INC=-I/home/arjen/repositories/turing/src/
+INC=-I../../../src/
 CFLAGS=-g -Wall $(INC)
 
 all: main
