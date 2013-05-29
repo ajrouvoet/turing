@@ -1,10 +1,10 @@
 import os
 import sys
 
-from dummy.config.defaults import *
+from dummy.config import settings
 from dummy.collector import Collector
 from dummy.collector.generic import PassFailCollector, CCoverageCollector
-from dummy.statistics.generic import CountEngine, CoverageOverviewEngine
+from dummy.statistics.generic import CountEngine, CCoverageOverviewEngine
 
 sys.path.append( "bin" )
 
@@ -34,8 +34,6 @@ STATISTICS = {
 		'engine': CountEngine( metric='pass/fail' )
 	},
 	'coverage': {
-		'engine': CoverageOverviewEngine()
+		'engine': CCoverageOverviewEngine()
 	}
 }
-
-TEST_RUNNER = os.path.join( './', TESTS_DIR, 'run.sh' )
