@@ -9,5 +9,5 @@ int main( int argc, char** argv )
 	printf( "PASS" );
 
 	// fail
-	return 1;
+	return 0;
 }

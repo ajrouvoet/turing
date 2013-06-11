@@ -7,6 +7,5 @@ int main( int argc, char** argv )
 {
 	printf( "hmm hmm" );
 
-	// fail
-	return 1;
+	return 1
 }

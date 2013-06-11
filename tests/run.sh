@@ -3,7 +3,14 @@
 if [ "$1" == '' ]
 then
 	echo "Test script run without argument";
-	exit;
+	exit 1;
 fi
 
-cd $1 && make clean && make && ./main
+cd $1 && make clean && make
+
+if [ -e "main" ]
+then
+	./main
+fi
+
+exit $?
