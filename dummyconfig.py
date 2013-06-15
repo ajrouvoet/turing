@@ -27,12 +27,24 @@ METRICS = {
 	},
 
 	'coverage' : {
-		'collector': 'dummy.honeypot.CCoverageCollector'
+		'collector': 'dummy.honeypot.CCoverageCollector',
+		'kwargs': {
+			'srcdirs': [
+				'src/'
+			],
+			'extract': [
+				'*/src/turingparser*',
+				'*/src/error*'
+			],
+			'remove': [
+				'*/src/turingparser*'
+			]
+		}
 	}
 }
 
 STATISTICS = {
-	'tests passing': {
+	'passing': {
 		'engine': 'dummy.honeypot.CountEngine',
 		'kwargs': {
 			'metric': 'pass/fail'
