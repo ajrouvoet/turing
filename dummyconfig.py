@@ -26,6 +26,16 @@ METRICS = {
 		'collector': 'dummy.honeypot.PassFailCollector'
 	},
 
+	'status' : {
+		'collector': 'dummy.honeypot.GrepCollector',
+		'kwargs': {
+			'statusses': {
+				'Fatal': "FATAL"
+			},
+			'default': None
+		}
+	},
+
 	'coverage' : {
 		'collector': 'dummy.honeypot.CCoverageCollector',
 		'kwargs': {
