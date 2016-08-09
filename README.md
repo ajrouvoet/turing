@@ -28,8 +28,3 @@ The syntax is as follows:
 	q3 _ -> q_reject \ L		<- 	and (move) can be either 'R' or 'L'
 	q4 x -> q1 \ R				<- 	(yes. it stands for 'right' and 'left' respectively. Good guess)
 
-Author
-------
-
-+ A.J. Rouvoet
-+ a.j.rouvoet@gmail.com
